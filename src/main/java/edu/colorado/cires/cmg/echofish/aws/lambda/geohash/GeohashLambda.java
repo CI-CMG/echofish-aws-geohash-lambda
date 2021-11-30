@@ -19,7 +19,7 @@ public class GeohashLambda implements RequestHandler<SNSEvent, Void> {
       new GeohashLambdaConfiguration(
           Objects.requireNonNull(System.getenv("ZARR_BUCKET_NAME")),
           Integer.parseInt(System.getenv("S3_UPLOAD_BUFFERS")),
-          geohashS3BucketName));
+          Objects.requireNonNull(System.getenv("GEOHASH_BUCKET_NAME"))));
 
   @Override
   public Void handleRequest(SNSEvent snsEvent, Context context) {
