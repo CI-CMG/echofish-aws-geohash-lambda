@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public class GeoHashProcessor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GeoHashProcessor.class);
-  private static final int BITS = 25;
+  private static final int LENGTH = 5;
 
 
   public static void process(S3ClientWrapper s3, GeohashEventContext event, ObjectMapper objectMapper) {
@@ -32,7 +32,7 @@ public class GeoHashProcessor {
     List<List<Number>> contents = new ArrayList<>();
     while (iterator.hasNext()) {
       DataPoint row = iterator.next();
-      String hash = GeoHash.encodeHash(row.getLatitude(), row.getLongitude(), BITS);
+      String hash = GeoHash.encodeHash(row.getLatitude(), row.getLongitude(), LENGTH);
       String path = "spatial/geojson/cruise/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + hash + ".json";
       if (!path.equals(currentPath)) {
 
