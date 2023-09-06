@@ -19,7 +19,6 @@ public class DataPointZarrIterator implements Iterator<DataPoint> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DataPointZarrIterator.class);
   public static final int DEFAULT_BUFFER_SIZE = 43520;
 
-  private final S3ClientWrapper s3;
   private final ZarrGroup zarrGroup;
   private final ZarrArray latitudeArray;
   private final ZarrArray longitudeArray;
@@ -36,7 +35,6 @@ public class DataPointZarrIterator implements Iterator<DataPoint> {
   public DataPointZarrIterator(S3ClientWrapper s3, String s3BucketName, String s3BucketZarrKey, int bufferSize) throws IOException {
     this.bufferSize = bufferSize;
     points = new ArrayList<>(bufferSize);
-    this.s3 = s3;
     zarrGroup = ZarrGroup.open(AwsS3ZarrStore.builder()
         .s3(s3)
         .bucket(s3BucketName)
@@ -54,8 +52,8 @@ public class DataPointZarrIterator implements Iterator<DataPoint> {
       try {
         int readSize = Math.min(bufferSize, remaining);
         int offset = count - remaining;
-        double[] longitudeChunk = (double[]) longitudeArray.read(new int[]{readSize}, new int[]{offset});
-        double[] latitudeChunk = (double[]) latitudeArray.read(new int[]{readSize}, new int[]{offset});
+        float[] longitudeChunk = (float[]) longitudeArray.read(new int[]{readSize}, new int[]{offset});
+        float[] latitudeChunk = (float[]) latitudeArray.read(new int[]{readSize}, new int[]{offset});
         double[] timeChunk = (double[]) timeArray.read(new int[]{readSize}, new int[]{offset});
         //TODO get latest version to allow concurrency
 //        double[] longitudeChunk = (double[]) longitudeArray.readConcurrently(new int[]{readSize}, new int[]{offset}, ForkJoinPool.commonPool());

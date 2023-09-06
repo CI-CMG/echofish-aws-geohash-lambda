@@ -2,13 +2,12 @@ package edu.colorado.cires.cmg.echofish.aws.lambda.geohash;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.davidmoten.geo.GeoHash;
 import edu.colorado.cires.cmg.awszarr.S3ClientWrapper;
 import edu.colorado.cires.cmg.s3out.S3OutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -21,11 +20,10 @@ public class GeoHashProcessor {
 
 
   public static void process(S3ClientWrapper s3, GeohashEventContext event, ObjectMapper objectMapper) {
-    final String cruise = event.getSurvey();
-//    Path targetBucketPath = s3fs.getPath("/" + targetBucket);
-    DataPointZarrIterator iterator = null;
+    DataPointZarrIterator iterator;
+    String zarrKey = "level_2/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + event.getCruiseName() + ".zarr";
     try {
-      iterator = new DataPointZarrIterator(s3, event.getS3BucketName(), cruise + ".zarr");
+      iterator = new DataPointZarrIterator(s3, event.getS3BucketName(), zarrKey);
     } catch (IOException e) {
       throw new IllegalStateException("Unable to read zarr store", e);
     }
@@ -34,16 +32,15 @@ public class GeoHashProcessor {
     List<List<Number>> contents = new ArrayList<>();
     while (iterator.hasNext()) {
       DataPoint row = iterator.next();
-      String hash = calculateGeohashString(row.getLongitude(), row.getLatitude(), BITS);
-      String fileName = hash + ".json";
-      String path = cruise + "/" + fileName;
+      String hash = GeoHash.encodeHash(row.getLatitude(), row.getLongitude(), BITS);
+      String path = "spatial/geojson/cruise/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + hash + ".json";
       if (!path.equals(currentPath)) {
 
         //write current hash data
         if (!contents.isEmpty()) {
           try (S3OutputStream out = S3OutputStream.builder()
               .s3(s3)
-              .bucket(event.getGeohashS3BucketName())
+              .bucket(event.getS3BucketName())
               .key(path)
               .autoComplete(false)
               .uploadQueueSize(event.getMaxUploadBuffers())
@@ -58,7 +55,7 @@ public class GeoHashProcessor {
         }
 
         //get next hash data
-        Optional<InputStream> maybeNext = s3.getObject(event.getGeohashS3BucketName(), path);
+        Optional<InputStream> maybeNext = s3.getObject(event.getS3BucketName(), path);
         if (maybeNext.isPresent()) {
           try (InputStream in = maybeNext.get()) {
             contents = objectMapper.readValue(in, new TypeReference<>() {
@@ -85,7 +82,7 @@ public class GeoHashProcessor {
     if (!contents.isEmpty()) {
       try (S3OutputStream out = S3OutputStream.builder()
           .s3(s3)
-          .bucket(event.getGeohashS3BucketName())
+          .bucket(event.getS3BucketName())
           .key(currentPath)
           .autoComplete(false)
           .uploadQueueSize(event.getMaxUploadBuffers())
@@ -99,76 +96,5 @@ public class GeoHashProcessor {
     }
   }
 
-  private static final char[] BASE_32 = new char[]{
-      '0', '1', '2', '3', '4', '5', '6', '7',
-      '8', '9', 'b', 'c', 'd', 'e', 'f', 'g',
-      'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r',
-      's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-  };
-
-
-  private static int[] splitToDecimalArray(long hash, int bits) {
-    LinkedList<Integer> result = new LinkedList<>();
-    long val = hash;
-    int c = (int) Math.ceil((double) bits / 5d);
-    for (int i = 0; i < c; i++) {
-      result.push((int) (val & 31));
-      val >>>= 5;
-    }
-    int[] array = new int[result.size()];
-    Iterator<Integer> it = result.iterator();
-    int i = 0;
-    while (it.hasNext()) {
-      array[i++] = it.next();
-    }
-    return array;
-  }
-
-  ;
-
-  private static String decimalToGeohashBase32(long hash, int bits) {
-    int[] parts = splitToDecimalArray(hash, bits);
-    StringBuilder result = new StringBuilder();
-    for (int i = 0; i < parts.length; i++) {
-      result.append(BASE_32[parts[i]]);
-    }
-    return result.toString();
-  }
-
-  ;
-
-  private static long calculateGeohash(double lon, double lat, int bits) {
-    double minLat = -90;
-    double maxLat = 90;
-    double minLon = -180;
-    double maxLon = 180;
-    long result = 0;
-    for (int i = 0; i < bits; i++) {
-      if (i % 2 == 0) { // even bit: bisect longitude
-        double midpoint = (minLon + maxLon) / 2d;
-        if (lon < midpoint) {
-          result <<= 1; // push a zero bit
-          maxLon = midpoint; // shrink range downwards
-        } else {
-          result = result << 1 | 1; // push a one bit
-          minLon = midpoint; // shrink range upwards
-        }
-      } else { // odd bit: bisect latitude
-        double midpoint = (minLat + maxLat) / 2d;
-        if (lat < midpoint) {
-          result <<= 1; // push a zero bit
-          maxLat = midpoint; // shrink range downwards
-        } else {
-          result = result << 1 | 1; // push a one bit
-          minLat = midpoint; // shrink range upwards
-        }
-      }
-    }
-    return result;
-  }
-
-  private static String calculateGeohashString(double lon, double lat, int bits) {
-    return decimalToGeohashBase32(calculateGeohash(lon, lat, bits), bits);
-  }
 
 }

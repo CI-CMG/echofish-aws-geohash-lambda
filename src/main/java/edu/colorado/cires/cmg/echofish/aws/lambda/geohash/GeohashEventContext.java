@@ -5,32 +5,39 @@ import java.util.Objects;
 public class GeohashEventContext {
 
   private final String s3BucketName;
-  private final String survey;
+  private final String shipName;
+  private final String cruiseName;
+  private final String sensorName;
   private final int maxUploadBuffers;
-  private final String geohashS3BucketName;
 
-  public GeohashEventContext(String s3BucketName, String survey, int maxUploadBuffers, String geohashS3BucketName) {
+  public GeohashEventContext(String s3BucketName, String shipName, String cruiseName, String sensorName, int maxUploadBuffers) {
     this.s3BucketName = s3BucketName;
-    this.survey = survey;
+    this.shipName = shipName;
+    this.cruiseName = cruiseName;
+    this.sensorName = sensorName;
     this.maxUploadBuffers = maxUploadBuffers;
-    this.geohashS3BucketName = geohashS3BucketName;
   }
 
   public String getS3BucketName() {
     return s3BucketName;
   }
 
-  public String getSurvey() {
-    return survey;
+  public String getShipName() {
+    return shipName;
+  }
+
+  public String getCruiseName() {
+    return cruiseName;
+  }
+
+  public String getSensorName() {
+    return sensorName;
   }
 
   public int getMaxUploadBuffers() {
     return maxUploadBuffers;
   }
 
-  public String getGeohashS3BucketName() {
-    return geohashS3BucketName;
-  }
 
   @Override
   public boolean equals(Object o) {
@@ -41,22 +48,23 @@ public class GeohashEventContext {
       return false;
     }
     GeohashEventContext that = (GeohashEventContext) o;
-    return maxUploadBuffers == that.maxUploadBuffers && Objects.equals(s3BucketName, that.s3BucketName) && Objects.equals(survey,
-        that.survey) && Objects.equals(geohashS3BucketName, that.geohashS3BucketName);
+    return maxUploadBuffers == that.maxUploadBuffers && Objects.equals(s3BucketName, that.s3BucketName) && Objects.equals(shipName,
+        that.shipName) && Objects.equals(cruiseName, that.cruiseName) && Objects.equals(sensorName, that.sensorName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(s3BucketName, survey, maxUploadBuffers, geohashS3BucketName);
+    return Objects.hash(s3BucketName, shipName, cruiseName, sensorName, maxUploadBuffers);
   }
 
   @Override
   public String toString() {
     return "GeohashEventContext{" +
         "s3BucketName='" + s3BucketName + '\'' +
-        ", survey='" + survey + '\'' +
+        ", shipName='" + shipName + '\'' +
+        ", cruiseName='" + cruiseName + '\'' +
+        ", sensorName='" + sensorName + '\'' +
         ", maxUploadBuffers=" + maxUploadBuffers +
-        ", geohashS3BucketName='" + geohashS3BucketName + '\'' +
         '}';
   }
 }

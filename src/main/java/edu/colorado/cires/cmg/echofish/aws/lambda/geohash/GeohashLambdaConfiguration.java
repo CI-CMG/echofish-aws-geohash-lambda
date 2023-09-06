@@ -6,13 +6,11 @@ public class GeohashLambdaConfiguration {
 
   private final String zarrBucketName;
   private final int maxUploadBuffers;
-  private final String geohashS3BucketName;
 
 
-  public GeohashLambdaConfiguration(String zarrBucketName, int maxUploadBuffers, String geohashS3BucketName) {
+  public GeohashLambdaConfiguration(String zarrBucketName, int maxUploadBuffers) {
     this.zarrBucketName = zarrBucketName;
     this.maxUploadBuffers = maxUploadBuffers;
-    this.geohashS3BucketName = geohashS3BucketName;
   }
 
   public String getZarrBucketName() {
@@ -21,10 +19,6 @@ public class GeohashLambdaConfiguration {
 
   public int getMaxUploadBuffers() {
     return maxUploadBuffers;
-  }
-
-  public String getGeohashS3BucketName() {
-    return geohashS3BucketName;
   }
 
   @Override
@@ -36,13 +30,12 @@ public class GeohashLambdaConfiguration {
       return false;
     }
     GeohashLambdaConfiguration that = (GeohashLambdaConfiguration) o;
-    return maxUploadBuffers == that.maxUploadBuffers && Objects.equals(zarrBucketName, that.zarrBucketName) && Objects.equals(
-        geohashS3BucketName, that.geohashS3BucketName);
+    return maxUploadBuffers == that.maxUploadBuffers && Objects.equals(zarrBucketName, that.zarrBucketName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(zarrBucketName, maxUploadBuffers, geohashS3BucketName);
+    return Objects.hash(zarrBucketName, maxUploadBuffers);
   }
 
   @Override
@@ -50,7 +43,6 @@ public class GeohashLambdaConfiguration {
     return "GeohashLambdaConfiguration{" +
         "zarrBucketName='" + zarrBucketName + '\'' +
         ", maxUploadBuffers=" + maxUploadBuffers +
-        ", geohashS3BucketName='" + geohashS3BucketName + '\'' +
         '}';
   }
 }
