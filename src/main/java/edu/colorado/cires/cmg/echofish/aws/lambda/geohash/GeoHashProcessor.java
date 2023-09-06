@@ -33,7 +33,7 @@ public class GeoHashProcessor {
     while (iterator.hasNext()) {
       DataPoint row = iterator.next();
       String hash = GeoHash.encodeHash(row.getLatitude(), row.getLongitude(), LENGTH);
-      String path = "spatial/geojson/cruise/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + hash + ".json";
+      String path = "spatial/geohash/cruise/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + hash + ".json";
       if (!path.equals(currentPath)) {
 
         //write current hash data
