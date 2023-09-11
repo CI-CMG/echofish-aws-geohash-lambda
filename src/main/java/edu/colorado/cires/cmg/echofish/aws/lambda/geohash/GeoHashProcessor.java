@@ -44,38 +44,54 @@ public class GeoHashProcessor {
     return new IndexFile();
   }
 
+  public static boolean isValid(DataPoint row) {
+    return row.getTime() != 0L
+        && !Double.isNaN(row.getLatitude())
+        && !Double.isNaN(row.getLongitude())
+        && Math.abs(row.getLatitude() - 0D) > 0.00001
+        && Math.abs(row.getLongitude() - 0D) > 0.00001;
+  }
+
   public static void process(S3ClientWrapper s3, GeohashEventContext event, ObjectMapper objectMapper) {
     DataPointZarrIterator iterator;
-    String zarrKey = "level_2/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + event.getCruiseName() + ".zarr";
+    String zarrKey =
+        "level_2/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + event.getCruiseName() + ".zarr";
     try {
       iterator = new DataPointZarrIterator(s3, event.getS3BucketName(), zarrKey);
     } catch (IOException e) {
       throw new IllegalStateException("Unable to read zarr store", e);
     }
-    int i = 0;
+    int i = -1;
     IndexFile indexFile = null;
     while (iterator.hasNext()) {
+
       DataPoint row = iterator.next();
-      String hash = GeoHash.encodeHash(row.getLatitude(), row.getLongitude(), LENGTH);
-      String path = "spatial/geohash/cruise/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + hash + ".json";
+      i++;
+      if (isValid(row)) {
+        String hash = GeoHash.encodeHash(row.getLatitude(), row.getLongitude(), LENGTH);
+        String path =
+            "spatial/geohash/cruise/" + event.getShipName() + "/" + event.getCruiseName() + "/" + event.getSensorName() + "/" + hash + ".json";
 
-      if(i == 0) {
-        indexFile = new IndexFile();
-        indexFile.setPath(path);
+        if (indexFile == null) {
+          indexFile = new IndexFile();
+          indexFile.setPath(path);
+        }
+
+        IndexFile.Record record = new IndexFile.Record();
+        record.setIndex(i);
+        record.setLongitude(row.getLongitude());
+        record.setLatitude(row.getLatitude());
+
+        if (!path.equals(indexFile.getPath())) {
+          saveIndexFile(s3, event, objectMapper, indexFile);
+          indexFile = readOrNewIndexFile(s3, event, objectMapper, path);
+          indexFile.setPath(path);
+        }
+
+        indexFile.getIndexRecords().add(record);
+      } else {
+        LOGGER.warn("Invalid point: {} : {}", i, row);
       }
-
-      IndexFile.Record record = new IndexFile.Record();
-      record.setIndex(i++);
-      record.setLongitude(row.getLongitude());
-      record.setLatitude(row.getLatitude());
-
-      if (!path.equals(indexFile.getPath())) {
-        saveIndexFile(s3, event, objectMapper, indexFile);
-        indexFile = readOrNewIndexFile(s3, event, objectMapper, path);
-        indexFile.setPath(path);
-      }
-
-      indexFile.getIndexRecords().add(record);
     }
 
     if (indexFile != null) {
