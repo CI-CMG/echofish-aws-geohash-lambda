@@ -4,7 +4,7 @@
 
   <groupId>io.github.ci-cmg.echofish</groupId>
   <artifactId>echofish-aws-geohash-lambda</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
 
   <name>${project.groupId}:${project.artifactId}</name>
   <description>EchoFish AWS Lambda that generates geohash info</description>
@@ -29,7 +29,7 @@
     <connection>scm:git:git@github.com:CI-CMG/echofish-aws-geohash-lambda.git</connection>
     <developerConnection>scm:git:git@github.com:CI-CMG/echofish-aws-geohash-lambda.git</developerConnection>
     <url>https://github.com/CI-CMG/echofish-aws-geohash-lambda</url>
-    <tag>1.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
